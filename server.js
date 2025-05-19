@@ -38,6 +38,22 @@ app.post("/api/receive-data", async (req, res) => {
   }
 });
 
+// Route to fetch latest sensor readings
+app.get("/api/readings", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT * FROM readings
+      ORDER BY created_at DESC
+      LIMIT 50
+    `);
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    console.error("❌ Error fetching readings:", err.message);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
+});
+
+
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
