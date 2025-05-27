@@ -44,7 +44,7 @@ app.get("/api/readings", async (req, res) => {
     const result = await pool.query(`
       SELECT * FROM readings
       ORDER BY created_at DESC
-      LIMIT 50
+      LIMIT 200
     `);
     res.json({ success: true, data: result.rows });
   } catch (err) {
