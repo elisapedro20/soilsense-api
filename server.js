@@ -26,10 +26,10 @@ app.post("/api/receive-data", async (req, res) => {
 
   try {
     const query = `
-      INSERT INTO readings (temperature, humidity, nitrogen, phosphorus, potassium)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO readings (temperature, humidity, nitrogen, phosphorus, potassium, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6)
     `;
-    await pool.query(query, [temperature, humidity, nitrogen, phosphorus, potassium]);
+    await pool.query(query, [temperature, humidity, nitrogen, phosphorus, potassium, created_at]);
     res.json({ success: true, message: "Data inserted successfully." });
   } catch (err) {
     console.error("❌ Database error:", err.message);
