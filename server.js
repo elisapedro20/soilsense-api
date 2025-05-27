@@ -18,9 +18,9 @@ const pool = new Pool({
 
 // Route to receive sensor data
 app.post("/api/receive-data", async (req, res) => {
-  const { temperature, humidity, nitrogen, phosphorus, potassium } = req.body;
+  const { temperature, humidity, nitrogen, phosphorus, potassium, created_at } = req.body;
 
-  if ([temperature, humidity, nitrogen, phosphorus, potassium].some(v => v === undefined)) {
+  if ([temperature, humidity, nitrogen, phosphorus, potassium, created_at].some(v => v === undefined)) {
     return res.status(400).json({ success: false, error: "Missing one or more required fields." });
   }
 
