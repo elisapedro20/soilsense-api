@@ -18,18 +18,18 @@ const pool = new Pool({
 
 // Route to receive sensor data
 app.post("/api/receive-data", async (req, res) => {
-  const { temperature, humidity, nitrogen, phosphorus, potassium, created_at, humidity_air } = req.body;
+  const { temperature, humidity, nitrogen, phosphorus, potassium, created_at, humidity_air, deviceid } = req.body;
 
-  if ([temperature, humidity, nitrogen, phosphorus, potassium, created_at, humidity_air].some(v => v === undefined)) {
+  if ([temperature, humidity, nitrogen, phosphorus, potassium, created_at, humidity_air, deviceid].some(v => v === undefined)) {
     return res.status(400).json({ success: false, error: "Missing one or more required fields." });
   }
 
   try {
     const query = `
-      INSERT INTO readings (temperature, humidity, nitrogen, phosphorus, potassium, created_at, humidity_air)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO readings (temperature, humidity, nitrogen, phosphorus, potassium, created_at, humidity_air, deviceid)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `;
-    await pool.query(query, [temperature, humidity, nitrogen, phosphorus, potassium, created_at, humidity_air]);
+    await pool.query(query, [temperature, humidity, nitrogen, phosphorus, potassium, created_at, humidity_air, deviceid]);
     res.json({ success: true, message: "Data inserted successfully." });
   } catch (err) {
     console.error("❌ Database error:", err.message);
