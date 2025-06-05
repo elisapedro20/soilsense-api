@@ -103,11 +103,14 @@ app.get("/api/user-profile", async (req, res) => {
 
   try {
     const result = await userPool.query(
-      `SELECT firstname AS first_name, lastname AS last_name, device_id 
-       FROM profiles 
-       WHERE email = $1`,
-      [email]
-    );
+  `SELECT first_name, last_name, device_id 
+   FROM profiles 
+   WHERE email = $1 
+   ORDER BY id DESC 
+   LIMIT 1`,  // ✅ Pega o último inserido
+  [email]
+);
+
 
     if (result.rows.length > 0) {
       return res.json({ 
