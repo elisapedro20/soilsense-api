@@ -103,7 +103,7 @@ app.get("/api/user-profile", async (req, res) => {
 
   try {
     const result = await userPool.query(
-  `SELECT first_name, last_name, device_id 
+  `SELECT firstname as first_name, lastname as last_name, device_id 
    FROM profiles 
    WHERE email = $1 
    ORDER BY id DESC 
