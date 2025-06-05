@@ -107,7 +107,7 @@ app.get("/api/user-profile", async (req, res) => {
    FROM profiles 
    WHERE email = $1 
    ORDER BY id DESC 
-   LIMIT 1`,  // ✅ Pega o último inserido
+   LIMIT 100`,  // ✅ Pega o último inserido
   [email]
 );
 
