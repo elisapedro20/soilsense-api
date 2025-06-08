@@ -200,6 +200,35 @@ app.post("/api/add-device", async (req, res) => {
   }
 });
 
+app.get("/api/user-profile-last", async (req, res) => {
+  const email = req.query.email;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email é obrigatório" });
+  }
+
+  try {
+    const result = await userPool.query(
+      `SELECT firstname as first_name, lastname as last_name, device_id 
+       FROM profiles 
+       WHERE email = $1 
+       ORDER BY id DESC 
+       LIMIT 1`,
+      [email]
+    );
+
+    if (result.rows.length > 0) {
+      return res.json({ success: true, profile: result.rows[0] });
+    } else {
+      return res.json({ success: false, message: "Perfil não encontrado" });
+    }
+  } catch (error) {
+    console.error("❌ Erro no banco de dados:", error);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor", error: error.message });
+  }
+});
+
+
 
 
 
