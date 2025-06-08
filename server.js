@@ -73,20 +73,25 @@ app.post("/api/profile", async (req, res) => {
       [email]
     );
 
-    // Insere novo perfil (nova linha) SEM sobrescrever outros registros
+    // Insere novo perfil ou atualiza se já existir para o mesmo device_id
     const query = `
       INSERT INTO profiles (email, firstname, lastname, device_id, device_key)
       VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (email, device_id) DO UPDATE
+      SET firstname = EXCLUDED.firstname,
+          lastname = EXCLUDED.lastname,
+          device_key = EXCLUDED.device_key
     `;
 
     await userPool.query(query, [email, first_name, last_name, device_ID, device_key]);
 
-    res.json({ success: true, message: "Profile saved successfully." });
+    res.json({ success: true, message: "Profile saved or updated successfully." });
   } catch (err) {
     console.error("❌ Error inserting profile:", err.message);
     res.status(500).json({ success: false, message: "Database error." });
   }
 });
+
 
 
 
