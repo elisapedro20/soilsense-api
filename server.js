@@ -170,6 +170,37 @@ app.get("/api/alerts", async (req, res) => {
   }
 });
 
+app.post("/api/add-device", async (req, res) => {
+  const { email, device_ID } = req.body;
+
+  if (!email || !device_ID) {
+    return res.status(400).json({ success: false, message: "Missing required fields (email, device_ID)." });
+  }
+
+  try {
+    // Garante que o email está na tabela 'users'
+    await userPool.query(
+      `INSERT INTO users (email) VALUES ($1) ON CONFLICT DO NOTHING`,
+      [email]
+    );
+
+    // Adiciona device só se não existir ainda
+    const query = `
+      INSERT INTO profiles (email, firstname, lastname, device_id, device_key)
+      VALUES ($1, '', '', $2, '')
+      ON CONFLICT (email, device_id) DO NOTHING
+    `;
+
+    await userPool.query(query, [email, device_ID]);
+
+    res.json({ success: true, message: "Device added successfully." });
+  } catch (err) {
+    console.error("❌ Error adding device:", err.message);
+    res.status(500).json({ success: false, message: "Database error." });
+  }
+});
+
+
 
 
 // ✅ Inicia o servidor
