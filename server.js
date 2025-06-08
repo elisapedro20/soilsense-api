@@ -103,19 +103,17 @@ app.get("/api/user-profile", async (req, res) => {
 
   try {
     const result = await userPool.query(
-  `SELECT firstname as first_name, lastname as last_name, device_id 
-   FROM profiles 
-   WHERE email = $1 
-   ORDER BY id DESC 
-   LIMIT 1`,  // ✅ Pega o último inserido
-  [email]
-);
-
+      `SELECT firstname as first_name, lastname as last_name, device_id 
+       FROM profiles 
+       WHERE email = $1 
+       ORDER BY id DESC`,
+      [email]
+    );
 
     if (result.rows.length > 0) {
       return res.json({ 
         success: true, 
-        profile: result.rows[0] // Pega o primeiro resultado
+        profiles: result.rows  // envia a lista completa
       });
     } else {
       return res.json({ 
@@ -132,6 +130,7 @@ app.get("/api/user-profile", async (req, res) => {
     });
   }
 });
+
 app.post("/api/alerts", async (req, res) => {
   const { created_at, message, device_id } = req.body;
 
