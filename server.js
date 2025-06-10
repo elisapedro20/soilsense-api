@@ -43,14 +43,22 @@ app.post("/api/receive-data", async (req, res) => {
   }
 });
 
-// ✅ ROTA: Buscar os últimos dados de sensores
+// ✅ ROTA: Buscar os últimos dados de sensores (com filtro opcional por device_id!)
 app.get("/api/readings", async (req, res) => {
+  const device_id = req.query.device_id;
+
   try {
-    const result = await sensorPool.query(`
-      SELECT * FROM readings
-      ORDER BY created_at DESC
-      LIMIT 300
-    `);
+    let query = `SELECT * FROM readings `;
+    let params = [];
+
+    if (device_id) {
+      query += `WHERE deviceid = $1 `;
+      params.push(device_id);
+    }
+
+    query += `ORDER BY created_at DESC LIMIT 300`;
+
+    const result = await sensorPool.query(query, params);
     res.json({ success: true, data: result.rows });
   } catch (err) {
     console.error("❌ Error fetching readings:", err.message);
@@ -100,17 +108,12 @@ app.post("/api/profile", async (req, res) => {
   }
 });
 
-
-
-// server.js
+// ✅ ROTA: Buscar todos os profiles de um user
 app.get("/api/user-profile", async (req, res) => {
   const email = req.query.email;
 
   if (!email) {
-    return res.status(400).json({ 
-      success: false, 
-      message: "Email é obrigatório" 
-    });
+    return res.status(400).json({ success: false, message: "Email é obrigatório" });
   }
 
   try {
@@ -123,89 +126,17 @@ app.get("/api/user-profile", async (req, res) => {
     );
 
     if (result.rows.length > 0) {
-      return res.json({ 
-        success: true, 
-        profiles: result.rows  // envia a lista completa
-      });
+      return res.json({ success: true, profiles: result.rows });
     } else {
-      return res.json({ 
-        success: false, 
-        message: "Perfil não encontrado" 
-      });
+      return res.json({ success: false, message: "Perfil não encontrado" });
     }
   } catch (error) {
     console.error("❌ Erro no banco de dados:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Erro interno do servidor",
-      error: error.message
-    });
+    return res.status(500).json({ success: false, message: "Erro interno do servidor", error: error.message });
   }
 });
 
-app.post("/api/alerts", async (req, res) => {
-  const { created_at, message, device_id } = req.body;
-
-  if (!created_at || !message || !device_id) {
-    return res.status(400).json({ success: false, message: "Missing fields." });
-  }
-
-  try {
-    await userPool.query(
-      `INSERT INTO alerts (created_at, message, device_id) VALUES ($1, $2, $3)`,
-      [created_at, message, device_id]
-    );
-    res.json({ success: true, message: "Alert added." });
-  } catch (err) {
-    console.error("❌ Error adding alert:", err.message);
-    res.status(500).json({ success: false, message: "Database error." });
-  }
-});
-
-// GET /api/alerts?device_id=XYZ
-app.get("/api/alerts", async (req, res) => {
-  const { device_id } = req.query;
-
-  if (!device_id) {
-    return res.status(400).json({ success: false, message: "Device ID is required." });
-  }
-
-  try {
-    const result = await userPool.query(
-      `SELECT created_at, message FROM alerts WHERE device_id = $1 ORDER BY created_at DESC LIMIT 10`,
-      [device_id]
-    );
-    res.json({ success: true, alerts: result.rows });
-  } catch (err) {
-    console.error("Error fetching alerts:", err.message);
-    res.status(500).json({ success: false, message: "Database error." });
-  }
-});
-
-app.post("/api/add-device", async (req, res) => {
-  const { email, device_ID } = req.body;
-
-  if (!email || !device_ID) {
-    return res.status(400).json({ success: false, message: "Missing required fields (email, device_ID)." });
-  }
-
-  try {
-    // Adiciona device só se não existir ainda
-    await userPool.query(
-      `INSERT INTO profiles (email, firstname, lastname, device_id, device_key)
-       VALUES ($1, '', '', $2, '')
-       ON CONFLICT (email, device_id) DO NOTHING`,
-      [email, device_ID]
-    );
-
-    res.json({ success: true, message: "Device added successfully." });
-  } catch (err) {
-    console.error("❌ Error adding device:", err.message);
-    res.status(500).json({ success: false, message: "Database error." });
-  }
-});
-
-
+// ✅ ROTA: Buscar o último profile de um user
 app.get("/api/user-profile-last", async (req, res) => {
   const email = req.query.email;
 
@@ -233,6 +164,73 @@ app.get("/api/user-profile-last", async (req, res) => {
     return res.status(500).json({ success: false, message: "Erro interno do servidor", error: error.message });
   }
 });
+
+// ✅ ROTA: Adicionar device para um user
+app.post("/api/add-device", async (req, res) => {
+  const { email, device_ID } = req.body;
+
+  if (!email || !device_ID) {
+    return res.status(400).json({ success: false, message: "Missing required fields (email, device_ID)." });
+  }
+
+  try {
+    // Adiciona device só se não existir ainda
+    await userPool.query(
+      `INSERT INTO profiles (email, firstname, lastname, device_id, device_key)
+       VALUES ($1, '', '', $2, '')
+       ON CONFLICT (email, device_id) DO NOTHING`,
+      [email, device_ID]
+    );
+
+    res.json({ success: true, message: "Device added successfully." });
+  } catch (err) {
+    console.error("❌ Error adding device:", err.message);
+    res.status(500).json({ success: false, message: "Database error." });
+  }
+});
+
+// ✅ ROTA: Adicionar alerta
+app.post("/api/alerts", async (req, res) => {
+  const { created_at, message, device_id } = req.body;
+
+  if (!created_at || !message || !device_id) {
+    return res.status(400).json({ success: false, message: "Missing fields." });
+  }
+
+  try {
+    await userPool.query(
+      `INSERT INTO alerts (created_at, message, device_id) VALUES ($1, $2, $3)`,
+      [created_at, message, device_id]
+    );
+    res.json({ success: true, message: "Alert added." });
+  } catch (err) {
+    console.error("❌ Error adding alert:", err.message);
+    res.status(500).json({ success: false, message: "Database error." });
+  }
+});
+
+// ✅ ROTA: Buscar alerts de um device
+app.get("/api/alerts", async (req, res) => {
+  const { device_id } = req.query;
+
+  if (!device_id) {
+    return res.status(400).json({ success: false, message: "Device ID is required." });
+  }
+
+  try {
+    const result = await userPool.query(
+      `SELECT created_at, message FROM alerts WHERE device_id = $1 ORDER BY created_at DESC LIMIT 10`,
+      [device_id]
+    );
+    res.json({ success: true, alerts: result.rows });
+  } catch (err) {
+    console.error("Error fetching alerts:", err.message);
+    res.status(500).json({ success: false, message: "Database error." });
+  }
+});
+
+
+
 
 // ✅ ROTA: Buscar perfil de um user para um device específico
 app.get("/api/user-profile-by-device", async (req, res) => {
