@@ -67,9 +67,9 @@ app.post("/api/profile", async (req, res) => {
   }
 
   try {
-    // Garante que o email está na tabela 'users' para satisfazer a foreign key
+    // Garante que o email está na tabela 'profiles' para satisfazer a foreign key
     await userPool.query(
-      `INSERT INTO users (email) VALUES ($1) ON CONFLICT DO NOTHING`,
+      `INSERT INTO profiles (email) VALUES ($1) ON CONFLICT DO NOTHING`,
       [email]
     );
 
@@ -183,7 +183,7 @@ app.post("/api/add-device", async (req, res) => {
   }
 
   try {
-    // Garante que o email está na tabela 'users'
+    // Garante que o email está na tabela 'profiles'
     await userPool.query(
       `INSERT INTO profiles (email) VALUES ($1) ON CONFLICT DO NOTHING`,
       [email]
