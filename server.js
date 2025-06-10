@@ -185,7 +185,7 @@ app.post("/api/add-device", async (req, res) => {
   try {
     // Garante que o email está na tabela 'users'
     await userPool.query(
-      `INSERT INTO users (email) VALUES ($1) ON CONFLICT DO NOTHING`,
+      `INSERT INTO profiles (email) VALUES ($1) ON CONFLICT DO NOTHING`,
       [email]
     );
 
