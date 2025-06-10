@@ -234,6 +234,32 @@ app.get("/api/user-profile-last", async (req, res) => {
   }
 });
 
+// ✅ ROTA: Buscar perfil de um user para um device específico
+app.get("/api/user-profile-by-device", async (req, res) => {
+  const { email, device_id } = req.query;
+
+  if (!email || !device_id) {
+    return res.status(400).json({ success: false, message: "Missing email or device_id" });
+  }
+
+  try {
+    const result = await userPool.query(
+      `SELECT firstname as first_name, lastname as last_name, device_id 
+       FROM profiles 
+       WHERE email = $1 AND device_id = $2`,
+      [email, device_id]
+    );
+
+    if (result.rows.length > 0) {
+      return res.json({ success: true, profile: result.rows[0] });
+    } else {
+      return res.json({ success: false, message: "Perfil não encontrado" });
+    }
+  } catch (error) {
+    console.error("❌ Erro no banco de dados:", error);
+    return res.status(500).json({ success: false, message: "Erro interno do servidor", error: error.message });
+  }
+});
 
 
 
