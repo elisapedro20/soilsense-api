@@ -67,31 +67,38 @@ app.post("/api/profile", async (req, res) => {
   }
 
   try {
-    // Garante que o email está na tabela 'profiles' para satisfazer a foreign key
-    await userPool.query(
-      `INSERT INTO profiles (email) VALUES ($1) ON CONFLICT DO NOTHING`,
-      [email]
+    // Verifica se já existe profiles com (email, device_ID)
+    const checkResult = await userPool.query(
+      `SELECT id FROM profiles WHERE email = $1 AND device_id = $2`,
+      [email, device_ID]
     );
 
-    // Insere novo perfil ou atualiza se já existir para o mesmo device_id
-    const query = `
-      INSERT INTO profiles (email, firstname, lastname, device_id, device_key)
-      VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (email, device_id) DO UPDATE
-      SET firstname = EXCLUDED.firstname,
-          lastname = EXCLUDED.lastname,
-          device_key = EXCLUDED.device_key
-    `;
+    if (checkResult.rows.length > 0) {
+      // Já existe → atualiza apenas o perfil
+      await userPool.query(
+        `UPDATE profiles 
+         SET firstname = $1, lastname = $2, device_key = $3
+         WHERE email = $4 AND device_id = $5`,
+        [first_name, last_name, device_key, email, device_ID]
+      );
 
-    await userPool.query(query, [email, first_name, last_name, device_ID, device_key]);
+      return res.json({ success: true, message: "Profile updated successfully." });
+    } else {
+      // Não existe → insere um novo registro
+      await userPool.query(
+        `INSERT INTO profiles (email, firstname, lastname, device_id, device_key)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [email, first_name, last_name, device_ID, device_key]
+      );
 
-    res.json({ success: true, message: "Profile saved or updated successfully." });
+      return res.json({ success: true, message: "Profile created successfully." });
+    }
+
   } catch (err) {
-    console.error("❌ Error inserting profile:", err.message);
+    console.error("❌ Error inserting/updating profile:", err.message);
     res.status(500).json({ success: false, message: "Database error." });
   }
 });
-
 
 
 
@@ -183,20 +190,13 @@ app.post("/api/add-device", async (req, res) => {
   }
 
   try {
-    // Garante que o email está na tabela 'profiles'
-    await userPool.query(
-      `INSERT INTO profiles (email) VALUES ($1) ON CONFLICT DO NOTHING`,
-      [email]
-    );
-
     // Adiciona device só se não existir ainda
-    const query = `
-      INSERT INTO profiles (email, firstname, lastname, device_id, device_key)
-      VALUES ($1, '', '', $2, '')
-      ON CONFLICT (email, device_id) DO NOTHING
-    `;
-
-    await userPool.query(query, [email, device_ID]);
+    await userPool.query(
+      `INSERT INTO profiles (email, firstname, lastname, device_id, device_key)
+       VALUES ($1, '', '', $2, '')
+       ON CONFLICT (email, device_id) DO NOTHING`,
+      [email, device_ID]
+    );
 
     res.json({ success: true, message: "Device added successfully." });
   } catch (err) {
@@ -204,6 +204,7 @@ app.post("/api/add-device", async (req, res) => {
     res.status(500).json({ success: false, message: "Database error." });
   }
 });
+
 
 app.get("/api/user-profile-last", async (req, res) => {
   const email = req.query.email;
