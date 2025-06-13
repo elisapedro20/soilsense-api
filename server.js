@@ -259,6 +259,53 @@ app.get("/api/user-profile-by-device", async (req, res) => {
   }
 });
 
+// ✅ ROTA: Salvar dados de irrigação
+app.post("/api/irrigation", async (req, res) => {
+  const { device_id, water, dispenser1, dispenser2, dispenser3, dispenser4, dispenser5, created_at } = req.body;
+
+  if (!device_id || water === undefined || dispenser1 === undefined || dispenser2 === undefined || dispenser3 === undefined || dispenser4 === undefined || dispenser5 === undefined) {
+    return res.status(400).json({ success: false, message: "Missing fields." });
+  }
+
+  try {
+    await userPool.query(
+      `INSERT INTO irrigation_data (deviceid, water, dispenser1, dispenser2, dispenser3, dispenser4, dispenser5, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [device_id, water, dispenser1, dispenser2, dispenser3, dispenser4, dispenser5, created_at || new Date()]
+    );
+
+    res.json({ success: true, message: "Irrigation data added." });
+  } catch (err) {
+    console.error("❌ Error adding irrigation data:", err.message);
+    res.status(500).json({ success: false, message: "Database error." });
+  }
+});
+
+// ✅ ROTA: Buscar últimos dados de irrigação por device_id
+app.get("/api/irrigation", async (req, res) => {
+  const { device_id } = req.query;
+
+  if (!device_id) {
+    return res.status(400).json({ success: false, message: "Device ID is required." });
+  }
+
+  try {
+    const result = await userPool.query(
+      `SELECT created_at, water, dispenser1, dispenser2, dispenser3, dispenser4, dispenser5
+       FROM irrigation_data 
+       WHERE deviceid = $1 
+       ORDER BY created_at DESC 
+       LIMIT 30`,
+      [device_id]
+    );
+
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    console.error("Error fetching irrigation data:", err.message);
+    res.status(500).json({ success: false, message: "Database error." });
+  }
+});
+
 
 
 
